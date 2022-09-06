@@ -19,6 +19,18 @@ class Pion(pygame.sprite.Sprite):
     def updateRect(self, xy):
         self.rect = self.image.get_rect(center=xy)
 
+    def updateImage(self):
+        if self.player == 2:
+            self.image = pygame.transform.scale(pygame.image.load("img/noir.png"), (60, 60))
+        else:
+            self.image = pygame.transform.scale(pygame.image.load("img/blanc.png"), (60, 60))
+
+    def getPlayer(self):
+        return self.player
+
+    def setPlayer(self, player):
+        self.player = player
+
 
 tableau = [[Pion(2), Pion(2), Pion(2), Pion(2), Pion(2)],
            [Pion(2), Pion(2), Pion(2), Pion(2), Pion(2)],
@@ -35,6 +47,7 @@ def drawGame():
 
     for i in range(len(tableau)):
         for k in range(len(tableau[i])):
+            tableau[i][k].updateImage()
             tableau[i][k].updateRect((100 + (k * 112.5), 100 + (i * 112.5)))
             if tableau[i][k].image is not None and tableau[i][k].player != 0:
                 fenetre.blit(tableau[i][k].image, tableau[i][k].rect)
@@ -46,6 +59,35 @@ def selectPion(event: pygame.event.Event):
             if tableau[i][j].rect.collidepoint(event.pos[0], event.pos[1]) is True:
                 return i, j
     return None
+
+
+def caseVoisins(pion: tuple):
+    voisins = []
+    if 0 <= pion[0] - 1 < len(tableau):
+        voisins.append((pion[0] - 1, pion[1]))
+    if 0 <= pion[0] + 1 < len(tableau):
+        voisins.append((pion[0] + 1, pion[1]))
+    if 0 <= pion[1] - 1 < len(tableau):
+        voisins.append((pion[0], pion[1] - 1))
+    if 0 <= pion[1] + 1 < len(tableau):
+        voisins.append((pion[0], pion[1] + 1))
+    if (pion[0] % 2 == 0 and pion[1] % 2 == 0) or (pion[0] % 2 != 0 and pion[1] % 2 != 0):
+        if 0 <= pion[0] - 1 < len(tableau) and 0 <= pion[1] - 1 < len(tableau):
+            voisins.append((pion[0] - 1, pion[1] - 1))
+        if 0 <= pion[0] + 1 < len(tableau) and 0 <= pion[1] - 1 < len(tableau):
+            voisins.append((pion[0] + 1, pion[1] - 1))
+        if 0 <= pion[0] - 1 < len(tableau[pion[0]]) and 0 <= pion[1] + 1 < len(tableau):
+            voisins.append((pion[0] - 1, pion[1] + 1))
+        if 0 <= pion[0] + 1 < len(tableau[pion[0]]) and 0 <= pion[1] + 1 < len(tableau):
+            voisins.append((pion[0] + 1, pion[1] + 1))
+    print(voisins)
+    return voisins
+
+
+def movePion(pion1: tuple, pion2: tuple):
+    if pion2 in caseVoisins(pion1) and tableau[pion2[0]][pion2[1]].getPlayer() == 0:
+        tableau[pion1[0]][pion1[1]].setPlayer(0)
+        tableau[pion2[0]][pion2[1]].setPlayer(game_player)
 
 
 def endGamepossibleToPlay(player: int):
@@ -90,15 +132,25 @@ while app:
                 elif 218 <= evt.pos[0] <= 434 and 431 <= evt.pos[1] <= 541:
                     app = 0
             elif menu == "game":
-                pion = selectPion(evt)
-                print(pion)
-                if game_case is None:
-                    game_case = pion
-                elif second_game_case is None and game_case is not pion:
-                    second_game_case = pion
-                if game_player == 1:
-                    pass
-                else:
-                    pass
+                if endGamepossibleToPlay(game_player) is False:
+                    print("fin du jeu")
+                    break
+
+                click = selectPion(evt)
+                if click is None:
+                    break
+
+                print(game_player)
+                if game_case is None and tableau[click[0]][click[1]].getPlayer() == game_player:
+                    game_case = click
+                elif game_case is not None and second_game_case is None and \
+                        tableau[click[0]][click[1]].getPlayer() == 0 and game_case is not click:
+                    second_game_case = click
+                if game_case is None or second_game_case is None:
+                    break
+
+                movePion(game_case, second_game_case)
+                game_case, second_game_case = None, None
+                game_player = 1 if game_player == 2 else 2
 
 pygame.quit()
