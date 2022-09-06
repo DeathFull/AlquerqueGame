@@ -97,11 +97,6 @@ while app:
                 elif second_game_case is None and game_case is not pion:
                     second_game_case = pion
                 if game_player == 1:
-                    if possible() is False:
-                        game_case = None
-                        second_game_case = None
-                        print("Impossible de jouer")
-                        break
                     pass
                 else:
                     pass
