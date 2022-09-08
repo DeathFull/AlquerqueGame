@@ -80,7 +80,6 @@ def caseVoisins(pion: tuple):
             voisins.append((pion[0] - 1, pion[1] + 1))
         if 0 <= pion[0] + 1 < len(tableau[pion[0]]) and 0 <= pion[1] + 1 < len(tableau):
             voisins.append((pion[0] + 1, pion[1] + 1))
-    print(voisins)
     return voisins
 
 
@@ -132,8 +131,7 @@ app = 1
 menu = "main"
 menuhover = None
 game_player = 1
-game_case = None
-second_game_case = None
+game_case, second_game_case = None, None
 while app:
     if menu == "main":
         fenetre.blit(pygame.image.load("img/menu.png"), (0, 0))
@@ -176,8 +174,6 @@ while app:
                 click = selectPion(evt)
                 if click is None:
                     break
-
-                print(game_player)
 
                 if game_case is None and tableau[click[0]][click[1]].getPlayer() == game_player:
                     game_case = click
