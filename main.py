@@ -84,18 +84,48 @@ def caseVoisins(pion: tuple):
     return voisins
 
 
+def capturePion(pion1: tuple, pion2: tuple):
+    for items in caseVoisins(pion1):
+        if items in caseVoisins(pion2) and (tableau[items[0]][items[1]].getPlayer() != (game_player or 0)) and (
+                (((pion1[0] + pion2[0]) / 2, (pion1[1] + pion2[1]) / 2) == items) or (
+                pion1[0] == pion2[0] or pion1[1] == pion2[1])):
+            return items
+    return None
+
+
 def movePion(pion1: tuple, pion2: tuple):
     if pion2 in caseVoisins(pion1) and tableau[pion2[0]][pion2[1]].getPlayer() == 0:
         tableau[pion1[0]][pion1[1]].setPlayer(0)
         tableau[pion2[0]][pion2[1]].setPlayer(game_player)
+        return True
+    elif capturePion(pion1, pion2) is not None:
+        pioncap = capturePion(pion1, pion2)
+        tableau[pioncap[0]][pioncap[1]].setPlayer(0)
+        tableau[pion1[0]][pion1[1]].setPlayer(0)
+        tableau[pion2[0]][pion2[1]].setPlayer(game_player)
+        return True
+    else:
+        return False
 
 
-def endGamepossibleToPlay(player: int):
+def isPossibleToPlay(player: int):
     for i in range(len(tableau)):
         for j in range(len(tableau[i])):
             if tableau[i][j].player == player:
                 return True
     return False
+
+
+def resetGame():
+    global game_player, game_case, second_game_case, tableau
+    game_player = 1
+    game_case = None
+    second_game_case = None
+    tableau = [[Pion(2), Pion(2), Pion(2), Pion(2), Pion(2)],
+               [Pion(2), Pion(2), Pion(2), Pion(2), Pion(2)],
+               [Pion(2), Pion(2), Pion(0), Pion(1), Pion(1)],
+               [Pion(1), Pion(1), Pion(1), Pion(1), Pion(1)],
+               [Pion(1), Pion(1), Pion(1), Pion(1), Pion(1)]]
 
 
 app = 1
@@ -113,6 +143,10 @@ while app:
             fenetre.blit(pygame.image.load("img/quit.png"), (218, 431))
     elif menu == "game":
         drawGame()
+    elif menu == "end":
+        fenetre.blit(pygame.image.load("img/end.png"), (0, 0))
+        if menuhover == "replay":
+            fenetre.blit(pygame.image.load("img/replay.png"), (105, 324))
     pygame.display.flip()
 
     for evt in pygame.event.get():
@@ -125,22 +159,26 @@ while app:
                     menuhover = "play"
                 elif 218 <= evt.pos[0] <= 434 and 431 <= evt.pos[1] <= 541:
                     menuhover = "quit"
+            if menu == "end":
+                menuhover = None
+                if 105 <= evt.pos[0] <= 541 and 324 <= evt.pos[1] <= 541:
+                    menuhover = "replay"
         elif evt.type == MOUSEBUTTONDOWN:
             if menu == "main":
                 if 218 <= evt.pos[0] <= 434 and 324 <= evt.pos[1] <= 430:
                     menu = "game"
                 elif 218 <= evt.pos[0] <= 434 and 431 <= evt.pos[1] <= 541:
                     app = 0
+            elif menu == "end":
+                if 105 <= evt.pos[0] <= 541 and 324 <= evt.pos[1] <= 541:
+                    menu = "game"
             elif menu == "game":
-                if endGamepossibleToPlay(game_player) is False:
-                    print("fin du jeu")
-                    break
-
                 click = selectPion(evt)
                 if click is None:
                     break
 
                 print(game_player)
+
                 if game_case is None and tableau[click[0]][click[1]].getPlayer() == game_player:
                     game_case = click
                 elif game_case is not None and second_game_case is None and \
@@ -149,8 +187,11 @@ while app:
                 if game_case is None or second_game_case is None:
                     break
 
-                movePion(game_case, second_game_case)
+                if movePion(game_case, second_game_case) is True:
+                    game_player = 1 if game_player == 2 else 2
                 game_case, second_game_case = None, None
-                game_player = 1 if game_player == 2 else 2
 
+                if isPossibleToPlay(game_player) is False:
+                    resetGame()
+                    menu = "end"
 pygame.quit()
