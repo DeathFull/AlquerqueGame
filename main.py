@@ -3,6 +3,40 @@ from pygame.locals import *
 
 pygame.init()
 fenetre = pygame.display.set_mode((650, 650))
+pygame.display.set_caption("Alquerque")
+
+
+class App:
+    def __init__(self):
+        self.brice = False
+
+
+class Plateau:
+    def __init__(self):
+        self.tableau = []
+        self.player = 1
+
+    def getTableau(self):
+        return self.tableau
+
+    def setTableau(self, tab):
+        self.tableau = tab
+
+    def switchPlayer(self, p):
+        self.player = 2 if self.player == 1 else 2
+
+    def selectPion(self, event: pygame.event.Event):
+        for i in range(len(self.tableau)):
+            for j in range(len(self.tableau[i])):
+                if self.tableau[i][j].rect.collidepoint(event.pos[0], event.pos[1]) is True:
+                    return i, j
+        return None
+
+    def hasPionInPlateau(self, player):
+        for i in range(len(self.tableau)):
+            for j in range(len(self.tableau[i])):
+                if self.tableau[i][j].player == player:
+                    return True
 
 
 class Pion(pygame.sprite.Sprite):
@@ -32,11 +66,13 @@ class Pion(pygame.sprite.Sprite):
         self.player = player
 
 
-tableau = [[Pion(2), Pion(2), Pion(2), Pion(2), Pion(2)],
-           [Pion(2), Pion(2), Pion(2), Pion(2), Pion(2)],
-           [Pion(2), Pion(2), Pion(0), Pion(1), Pion(1)],
-           [Pion(1), Pion(1), Pion(1), Pion(1), Pion(1)],
-           [Pion(1), Pion(1), Pion(1), Pion(1), Pion(1)]]
+tab = Plateau()
+
+tab.setTableau([[Pion(2), Pion(2), Pion(2), Pion(2), Pion(2)],
+                [Pion(2), Pion(2), Pion(2), Pion(2), Pion(2)],
+                [Pion(2), Pion(2), Pion(0), Pion(1), Pion(1)],
+                [Pion(1), Pion(1), Pion(1), Pion(1), Pion(1)],
+                [Pion(1), Pion(1), Pion(1), Pion(1), Pion(1)]])
 
 
 def drawGame():
@@ -51,14 +87,6 @@ def drawGame():
             tableau[i][k].updateRect((100 + (k * 112.5), 100 + (i * 112.5)))
             if tableau[i][k].image is not None and tableau[i][k].player != 0:
                 fenetre.blit(tableau[i][k].image, tableau[i][k].rect)
-
-
-def selectPion(event: pygame.event.Event):
-    for i in range(len(tableau)):
-        for j in range(len(tableau[i])):
-            if tableau[i][j].rect.collidepoint(event.pos[0], event.pos[1]) is True:
-                return i, j
-    return None
 
 
 def caseVoisins(pion: tuple):
@@ -155,11 +183,6 @@ def movePion(pion1: tuple, pion2: tuple):
         return False
 
 
-def hasPionInPlateau(player: int):
-    for i in range(len(tableau)):
-        for j in range(len(tableau[i])):
-            if tableau[i][j].player == player:
-                return True
 
 
 def canMove():
@@ -179,15 +202,15 @@ def isPossibleToPlay(player: int):
 
 
 def resetGame():
-    global game_player, game_case, second_game_case, tableau
+    global game_player, game_case, second_game_case
     game_player = 1
     game_case = None
     second_game_case = None
-    tableau = [[Pion(2), Pion(2), Pion(2), Pion(2), Pion(2)],
-               [Pion(2), Pion(2), Pion(2), Pion(2), Pion(2)],
-               [Pion(2), Pion(2), Pion(0), Pion(1), Pion(1)],
-               [Pion(1), Pion(1), Pion(1), Pion(1), Pion(1)],
-               [Pion(1), Pion(1), Pion(1), Pion(1), Pion(1)]]
+    tab.setTableau([[Pion(2), Pion(2), Pion(2), Pion(2), Pion(2)],
+                    [Pion(2), Pion(2), Pion(2), Pion(2), Pion(2)],
+                    [Pion(2), Pion(2), Pion(0), Pion(1), Pion(1)],
+                    [Pion(1), Pion(1), Pion(1), Pion(1), Pion(1)],
+                    [Pion(1), Pion(1), Pion(1), Pion(1), Pion(1)]])
 
 
 app = 1
@@ -213,8 +236,6 @@ while app:
     for evt in pygame.event.get():
         if evt.type == QUIT:
             app = 0
-        elif evt.type == KEYDOWN and evt.key == K_SPACE:
-            print(game_player)
         elif evt.type == MOUSEMOTION:
             if menu == "main":
                 menuhover = None
