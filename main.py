@@ -7,14 +7,55 @@ pygame.display.set_caption("Alquerque")
 
 
 class App:
-    def __init__(self):
-        self.brice = False
+    def __init__(self, plateau):
+        self.app = 1
+        self.menu = "main"
+        self.menuhover = None
+        self.plateau: Plateau = plateau
+
+    def getStatus(self):
+        return self.app
+
+    def setStatus(self, status):
+        self.app = status
+
+    def getMenu(self):
+        return self.menu
+
+    def setMenu(self, menu):
+        self.menu = menu
+
+    def getMenuHover(self):
+        return self.menuhover
+
+    def setMenuHover(self, mhover):
+        self.menuhover = mhover
+
+    def getPlateau(self):
+        return self.plateau
 
 
 class Plateau:
     def __init__(self):
-        self.tableau = []
+        self.tableau = [[Pion(2), Pion(2), Pion(2), Pion(2), Pion(2)],
+                        [Pion(2), Pion(2), Pion(2), Pion(2), Pion(2)],
+                        [Pion(2), Pion(2), Pion(0), Pion(1), Pion(1)],
+                        [Pion(1), Pion(1), Pion(1), Pion(1), Pion(1)],
+                        [Pion(1), Pion(1), Pion(1), Pion(1), Pion(1)]]
         self.player = 1
+        self.game_case, self.second_game_case = None, None
+
+    def getGameCase(self):
+        return self.game_case
+
+    def setGameCase(self, gamecase):
+        self.game_case = gamecase
+
+    def getSecondGameCase(self):
+        return self.second_game_case
+
+    def setSecondGameCase(self, sgamecase):
+        self.second_game_case = sgamecase
 
     def getTableau(self):
         return self.tableau
@@ -26,7 +67,10 @@ class Plateau:
         return self.player
 
     def switchPlayer(self):
-        self.player = 2 if self.player == 1 else 2
+        if self.player == 1:
+            self.player = 2
+        else:
+            self.player = 1
 
     def drawGame(self, fen):
         fen.fill((125, 125, 125))
@@ -54,7 +98,7 @@ class Plateau:
                 if self.tableau[i][j].player == player:
                     return True
 
-    def caseVoisins(self, pion: tuple):
+    def listNeighbours(self, pion: tuple):
         voisins = []
         if 0 <= pion[0] - 1 < len(self.tableau):
             voisins.append((pion[0] - 1, pion[1]))
@@ -75,7 +119,7 @@ class Plateau:
                 voisins.append((pion[0] + 1, pion[1] + 1))
         return voisins
 
-    def caseVoisinsCanCapture(self, pion: tuple):
+    def listCaptureTargets(self, pion: tuple):
         voisins = []
         if 0 <= pion[0] - 2 < len(self.tableau):
             voisins.append((pion[0] - 2, pion[1]))
@@ -97,17 +141,17 @@ class Plateau:
         return voisins
 
     def capturePion(self, pion1: tuple, pion2: tuple):
-        for items in self.caseVoisins(pion1):
-            if items in self.caseVoisins(pion2) and (
+        for items in self.listNeighbours(pion1):
+            if items in self.listNeighbours(pion2) and (
                     self.tableau[items[0]][items[1]].getPlayer() != (self.player and 0)) and (
                     (((pion1[0] + pion2[0]) / 2, (pion1[1] + pion2[1]) / 2) == items) or (
                     pion1[0] == pion2[0] == items[0] or pion1[1] == pion2[1] == items[1])):
                 return items
         return None
 
-    def verifCanCapturePion(self, pion1: tuple, pion2: tuple):
-        for items in self.caseVoisins(pion1):
-            if self.tableau[pion2[0]][pion2[1]].getPlayer() == 0 and items in self.caseVoisins(pion2) and (
+    def isActualCapture(self, pion1: tuple, pion2: tuple):
+        for items in self.listNeighbours(pion1):
+            if self.tableau[pion2[0]][pion2[1]].getPlayer() == 0 and items in self.listNeighbours(pion2) and (
                     self.tableau[items[0]][items[1]].getPlayer() != self.player and self.tableau[items[0]][
                 items[1]].getPlayer() != 0) and ((((pion1[0] + pion2[0]) / 2, (pion1[1] + pion2[1]) / 2) == items) or (
                     pion1[0] == pion2[0] == items[0] or pion1[1] == pion2[1] == items[1])):
@@ -118,8 +162,8 @@ class Plateau:
         for i in range(len(self.tableau)):
             for j in range(len(self.tableau[i])):
                 if self.tableau[i][j].getPlayer() == self.player:
-                    for item in self.caseVoisinsCanCapture((i, j)):
-                        if self.verifCanCapturePion((i, j), item) is not None:
+                    for item in self.listCaptureTargets((i, j)):
+                        if self.isActualCapture((i, j), item) is not None:
                             return True
         return False
 
@@ -127,13 +171,13 @@ class Plateau:
         for i in range(len(self.tableau)):
             for j in range(len(self.tableau[i])):
                 if self.tableau[i][j].getPlayer() == self.player:
-                    for item in self.caseVoisins((i, j)):
+                    for item in self.listNeighbours((i, j)):
                         if self.tableau[item[0]][item[1]].getPlayer() == 0:
                             return True
         return False
 
     def movePion(self, pion1: tuple, pion2: tuple):
-        if pion2 in self.caseVoisins(pion1) and self.tableau[pion2[0]][pion2[1]].getPlayer() == 0:
+        if pion2 in self.listNeighbours(pion1) and self.tableau[pion2[0]][pion2[1]].getPlayer() == 0:
             if self.canCapturePion() is False:
                 self.tableau[pion2[0]][pion2[1]].setPlayer(self.player)
             self.tableau[pion1[0]][pion1[1]].setPlayer(0)
@@ -144,6 +188,7 @@ class Plateau:
             self.tableau[pioncap[0]][pioncap[1]].setPlayer(0)
             self.tableau[pion1[0]][pion1[1]].setPlayer(0)
             self.tableau[pion2[0]][pion2[1]].setPlayer(self.player)
+            print(self.canCapturePion())
             if self.canCapturePion() is False:
                 self.switchPlayer()
             return True
@@ -159,11 +204,11 @@ class Plateau:
         self.player = 1
         case = None
         secondcase = None
-        tab.setTableau([[Pion(2), Pion(2), Pion(2), Pion(2), Pion(2)],
-                        [Pion(2), Pion(2), Pion(2), Pion(2), Pion(2)],
-                        [Pion(2), Pion(2), Pion(0), Pion(1), Pion(1)],
-                        [Pion(1), Pion(1), Pion(1), Pion(1), Pion(1)],
-                        [Pion(1), Pion(1), Pion(1), Pion(1), Pion(1)]])
+        self.setTableau([[Pion(2), Pion(2), Pion(2), Pion(2), Pion(2)],
+                         [Pion(2), Pion(2), Pion(2), Pion(2), Pion(2)],
+                         [Pion(2), Pion(2), Pion(0), Pion(1), Pion(1)],
+                         [Pion(1), Pion(1), Pion(1), Pion(1), Pion(1)],
+                         [Pion(1), Pion(1), Pion(1), Pion(1), Pion(1)]])
         return case, secondcase
 
 
@@ -194,33 +239,20 @@ class Pion(pygame.sprite.Sprite):
         self.player = player
 
 
-tab = Plateau()
+app = App(Plateau())
 
-tab.setTableau([[Pion(2), Pion(2), Pion(2), Pion(2), Pion(2)],
-                [Pion(2), Pion(2), Pion(2), Pion(2), Pion(2)],
-                [Pion(2), Pion(2), Pion(0), Pion(1), Pion(1)],
-                [Pion(1), Pion(1), Pion(1), Pion(1), Pion(1)],
-                [Pion(1), Pion(1), Pion(1), Pion(1), Pion(1)]])
-
-
-
-
-app = 1
-menu = "main"
-menuhover = None
-game_case, second_game_case = None, None
-while app:
-    if menu == "main":
+while app.getStatus():
+    if app.getMenu() == "main":
         fenetre.blit(pygame.image.load("img/menu.png"), (0, 0))
-        if menuhover == "play":
+        if app.getMenuHover() == "play":
             fenetre.blit(pygame.image.load("img/play.png"), (218, 324))
-        elif menuhover == "quit":
+        elif app.getMenuHover() == "quit":
             fenetre.blit(pygame.image.load("img/quit.png"), (218, 431))
-    elif menu == "game":
-        tab.drawGame(fenetre)
-    elif menu == "end":
+    elif app.getMenu() == "game":
+        app.getPlateau().drawGame(fenetre)
+    elif app.getMenu() == "end":
         fenetre.blit(pygame.image.load("img/end.png"), (0, 0))
-        if menuhover == "replay":
+        if app.getMenuHover() == "replay":
             fenetre.blit(pygame.image.load("img/replay.png"), (105, 324))
     pygame.display.flip()
 
@@ -228,43 +260,56 @@ while app:
         if evt.type == QUIT:
             app = 0
         elif evt.type == MOUSEMOTION:
-            if menu == "main":
-                menuhover = None
+            if app.getMenu() == "main":
+                app.setMenuHover(None)
                 if 218 <= evt.pos[0] <= 434 and 324 <= evt.pos[1] <= 430:
-                    menuhover = "play"
+                    app.setMenuHover("play")
                 elif 218 <= evt.pos[0] <= 434 and 431 <= evt.pos[1] <= 541:
-                    menuhover = "quit"
-            if menu == "end":
-                menuhover = None
+                    app.setMenuHover("quit")
+            if app.getMenu() == "end":
+                app.setMenuHover(None)
                 if 105 <= evt.pos[0] <= 541 and 324 <= evt.pos[1] <= 541:
-                    menuhover = "replay"
+                    app.setMenuHover("replay")
         elif evt.type == MOUSEBUTTONDOWN:
-            if menu == "main":
+            if app.getMenu() == "main":
                 if 218 <= evt.pos[0] <= 434 and 324 <= evt.pos[1] <= 430:
-                    menu = "game"
+                    app.setMenu("game")
                 elif 218 <= evt.pos[0] <= 434 and 431 <= evt.pos[1] <= 541:
                     app = 0
-            elif menu == "end":
+            elif app.getMenu() == "end":
                 if 105 <= evt.pos[0] <= 541 and 324 <= evt.pos[1] <= 541:
-                    menu = "game"
-            elif menu == "game":
-                click = tab.selectPion(evt)
+                    app.setMenu("game")
+            elif app.getMenu() == "game":
+                click = app.getPlateau().selectPion(evt)
                 if click is None:
                     break
 
-                if game_case is None and tab.getTableau()[click[0]][click[1]].getPlayer() == tab.getCurrentPlayer():
-                    game_case = click
-                elif game_case is not None and second_game_case is None and \
-                        tab.getTableau()[click[0]][click[1]].getPlayer() == 0 and game_case is not click:
-                    second_game_case = click
-                if game_case is None or second_game_case is None:
+                if app.getPlateau().getGameCase() is None and app.getPlateau().getTableau()[click[0]][
+                    click[1]].getPlayer() == app.getPlateau().getCurrentPlayer():
+                    print("first")
+                    app.getPlateau().setGameCase(click)
+                elif app.getPlateau().getGameCase() is not None and app.getPlateau().getSecondGameCase() is None and \
+                        app.getPlateau().getTableau()[click[0]][
+                            click[1]].getPlayer() == 0 and app.getPlateau().getGameCase() is not click:
+                    print("second")
+                    app.getPlateau().setSecondGameCase(click)
+                if app.getPlateau().getGameCase() is None or app.getPlateau().getSecondGameCase() is None:
                     break
-                if tab.movePion(game_case, second_game_case) is True:
-                    game_case, second_game_case = None, None
-                    if tab.canCapturePion():
+                if app.getPlateau().movePion(app.getPlateau().getGameCase(),
+                                             app.getPlateau().getSecondGameCase()) is True:
+                    print(app.getPlateau().getCurrentPlayer())
+                    app.getPlateau().setGameCase(None)
+                    app.getPlateau().setSecondGameCase(None)
+                    if app.getPlateau().canCapturePion():
                         break
+                else:
+                    app.getPlateau().setGameCase(None)
+                    app.getPlateau().setSecondGameCase(None)
 
-                if tab.isPossibleToPlay(1) is False and tab.isPossibleToPlay(2) is False:
-                    game_case, second_game_case = tab.resetPlateau(game_case, second_game_case)
+                if app.getPlateau().isPossibleToPlay(1) is False and app.getPlateau().isPossibleToPlay(2) is False:
+                    game_case, second_game_case = app.getPlateau().resetPlateau(app.getPlateau().getGameCase(),
+                                                                                app.getPlateau().getSecondGameCase())
+                    app.getPlateau().setGameCase(game_case)
+                    app.getPlateau().setSecondGameCase(second_game_case)
                     menu = "end"
 pygame.quit()
